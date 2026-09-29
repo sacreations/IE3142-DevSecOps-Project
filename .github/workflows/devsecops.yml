@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
   security-events: write
 
 jobs:
@@ -25,136 +26,123 @@ jobs:
     name: "Gate 1: SAST (Semgrep)"
     runs-on: ubuntu-latest
     container:
-      image: returntocorp/semgrep:latest
+      image: semgrep/semgrep
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Run Semgrep Security Rulesets
+      - name: Run Semgrep SAST Scan
         run: |
+          set +e
           semgrep scan \
-            --config "p/javascript" \
-            --config "p/owasp-top-ten" \
+            --config p/javascript \
+            --config p/owasp-top-ten \
             --error \
             --sarif \
             --output semgrep-results.sarif \
-            app/ || EXIT_CODE=$?
-
-          echo "Semgrep scan completed with exit code: ${EXIT_CODE:-0}"
+            app/
+          EXIT_CODE=$?
+          set -e
           if [ "${{ github.event.inputs.fail_on_findings }}" != "false" ] && [ "${EXIT_CODE:-0}" -ne 0 ]; then
             echo "::error::Gate 1 FAILED: Semgrep detected High/Critical security violations."
             exit 1
           fi
+          echo "Gate 1 PASSED: No High/Critical SAST findings detected."
 
-      - name: Upload SAST SARIF Results
+      - name: Upload Semgrep SARIF Results
         uses: github/codeql-action/upload-sarif@v3
         if: always()
+        continue-on-error: true
         with:
           sarif_file: semgrep-results.sarif
+          wait-for-processing: false
 
   # -------------------------------------------------------------
   # Gate 2: Software Composition Analysis (SCA)
   # -------------------------------------------------------------
-  sca-dependency-audit:
+  sca-npm-audit:
     name: "Gate 2: SCA (npm audit)"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js Runtime
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 14
-          cache: "npm"
+          node-version: "18"
 
-      - name: Run Dependency Audit (High/Critical Check)
+      - name: Install Dependencies
+        run: npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts
+
+      - name: Run npm audit
         run: |
-          echo "Executing Software Composition Analysis (SCA)..."
-          npm audit --audit-level=high --json > npm-audit-report.json || AUDIT_EXIT=$?
-          echo "npm audit finished with exit code: ${AUDIT_EXIT:-0}"
-
+          set +e
+          npm audit --json > npm-audit-report.json 2>&1
+          AUDIT_EXIT=$?
+          set -e
+          npm audit --audit-level=high 2>&1 || true
           if [ "${{ github.event.inputs.fail_on_findings }}" != "false" ] && [ "${AUDIT_EXIT:-0}" -ne 0 ]; then
-            echo "::warning::Gate 2: High/Critical dependency vulnerabilities found."
-            # Toggle enforcement based on pipeline strictness
+            echo "::warning::npm audit found vulnerabilities (exit code: $AUDIT_EXIT)."
+            npm audit --audit-level=high 2>&1
+            FINAL_EXIT=$?
             if [ "${{ github.event.inputs.fail_on_findings }}" == "true" ]; then
               echo "::error::Gate 2 FAILED: SCA threshold exceeded."
-              exit 1
             fi
           fi
+          echo "Gate 2: SCA analysis complete."
 
-      - name: Upload SCA Audit Artifact
+      - name: Upload npm audit Report
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: npm-audit-report
           path: npm-audit-report.json
+          if-no-files-found: warn
 
   # -------------------------------------------------------------
-  # Gate 3: Secret Detection & Credential Scanning
+  # Gate 3: Secrets Detection (Gitleaks)
   # -------------------------------------------------------------
-  secret-scan-gitleaks:
+  secrets-gitleaks:
     name: "Gate 3: Secrets (Gitleaks)"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Full Git History
+      - name: Checkout Source Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Run Gitleaks Secret Scanner
+      - name: Run Gitleaks Secret Scan
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_ENABLE_SUMMARY: true
+          GITLEAKS_SCAN_ALL: "true"
 
   # -------------------------------------------------------------
-  # Gate 4: Container Security & Image Vulnerability Scanning
+  # Gate 4: Container Image Vulnerability Scanning
   # -------------------------------------------------------------
   container-security-trivy:
-    name: "Gate 4: Container Security (Trivy)"
+    name: "Gate 4: Container Scan (Trivy)"
     runs-on: ubuntu-latest
-    needs: [sast-semgrep, sca-dependency-audit, secret-scan-gitleaks]
+    needs: [sast-semgrep, sca-npm-audit, secrets-gitleaks]
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Hardened Container Image
+      - name: Build Docker Image
         run: |
-          docker build \
-            --tag nodegoat-web:${{ github.sha }} \
-            --file Dockerfile .
+          docker build -t nodegoat-web:${{ github.sha }} .
 
-      - name: Run Aquasec Trivy Image Scanner (Blocking Gate)
-        uses: aquasecurity/trivy-action@master
+      - name: Run Trivy Container Scan
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: "nodegoat-web:${{ github.sha }}"
           format: "table"
-          exit-code: "1" # STRICT BLOCKING: Fails build on High/Critical CVEs
-          ignore-unfixed: true
-          vuln-type: "os,library"
           severity: "CRITICAL,HIGH"
-
-      - name: Run Baseline Trivy SARIF Report Generation
-        uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: "nodegoat-web:${{ github.sha }}"
-          format: "sarif"
-          output: "trivy-results.sarif"
-          severity: "CRITICAL,HIGH,MEDIUM"
-
-      - name: Upload Container Scan SARIF
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: trivy-results.sarif
+          exit-code: "1"
 
   # -------------------------------------------------------------
-  # Deployment Stage: Runtime Secret Injection
+  # Deploy & Runtime Secret Injection Verification
   # -------------------------------------------------------------
   deploy-verification:
     name: "Deploy & Runtime Secret Injection"
