@@ -1,4 +1,4 @@
-FROM node:14-alpine
+FROM node:20-alpine
 
 # Set working directory and configure directory permissions
 WORKDIR /usr/src/app
