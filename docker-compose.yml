@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nodegoat-web
+    restart: unless-stopped
+    user: "node"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-4000}
+      - MONGODB_URI=${MONGODB_URI:-mongodb://db:27017/nodegoat}
+      - SESSION_SECRET=${SESSION_SECRET}
+    ports:
+      - "4000:4000"
+    networks:
+      - backend-net
+    depends_on:
+      - db
+
+  db:
+    image: mongo:4.4
+    container_name: nodegoat-db
+    restart: unless-stopped
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - backend-net
+    # Port 27017 is strictly internal to backend-net (no host exposure)
+
+networks:
+  backend-net:
+    driver: bridge
+    name: backend-net
+
+volumes:
+  mongodb_data:
+    driver: local
