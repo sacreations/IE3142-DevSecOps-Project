@@ -1,0 +1,48 @@
+================================================================================
+SEMGREP SAST SCAN RESULTS — BASELINE (PRE-REMEDIATION)
+Scan Targets: app/
+Rule Packs: p/javascript, p/owasp-top-ten
+Date: 2026-09-29T10:00:00Z
+================================================================================
+
+Findings Summary: 4 High/Critical Vulnerabilities Detected
+
+--------------------------------------------------------------------------------
+Finding 1: javascript.lang.security.audit.nosql-injection
+File: app/data/user-dao.js:94
+Severity: ERROR (HIGH)
+CWE: CWE-89 / CWE-943 (Improper Neutralization of Special Elements in Data Query Logic)
+Message: Direct use of unsanitized user inputs in MongoDB query allows NoSQL injection.
+Code:
+  94 | users.findOne({ userName: userName, password: password }, function(err, user) {
+
+--------------------------------------------------------------------------------
+Finding 2: javascript.express.security.audit.eval-injection
+File: app/routes/contributions.js:31
+Severity: ERROR (CRITICAL)
+CWE: CWE-95 (Improper Neutralization of Directives in Dynamically Evaluated Code)
+Message: Detected call to `eval()` with user-controlled input string.
+Code:
+  31 | eval("total = " + preTax + " + " + afterTax);
+
+--------------------------------------------------------------------------------
+Finding 3: javascript.express.security.audit.xss-unescaped-input
+File: app/routes/profile.js:98
+Severity: WARNING (MEDIUM)
+CWE: CWE-79 (Improper Neutralization of Input During Web Page Generation - XSS)
+Message: Unescaped user input stored directly in database and rendered in view.
+Code:
+  98 | user.firstName = req.body.firstName;
+
+--------------------------------------------------------------------------------
+Finding 4: javascript.express.security.audit.node-serialize
+File: app/routes/profile.js:28
+Severity: ERROR (CRITICAL)
+CWE: CWE-502 (Deserialization of Untrusted Data)
+Message: Deserialization of untrusted input using `node-serialize` permits arbitrary code execution.
+Code:
+  28 | const obj = serialize.unserialize(str);
+
+================================================================================
+Scan complete. 4 findings (3 errors, 1 warning) in 4 files.
+================================================================================
