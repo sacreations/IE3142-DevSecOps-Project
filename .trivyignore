@@ -1,0 +1,7 @@
+# CVE-2023-25345: swig template engine - no upstream fix available (abandoned package)
+# Risk accepted: swig is used only for server-side rendering in a controlled environment
+CVE-2023-25345
+
+# CVE-2024-29415: ip package - affected, no fix released upstream
+# Risk accepted: ip is a transitive dev-tooling dependency not exposed to external input
+CVE-2024-29415
