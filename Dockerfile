@@ -1,26 +1,36 @@
-FROM node:20-alpine
+# Stage 1: Build & Dependency Installation Stage
+FROM node:20-alpine AS builder
 
-# Set working directory and configure directory permissions
 WORKDIR /usr/src/app
-RUN chown -R node:node /usr/src/app
-
-# Update npm globally to patch bundled tool dependencies (compatible with Node.js 20)
-RUN npm install --global npm@11.6.2 && npm cache clean --force
 
 # Copy dependency manifests
-COPY --chown=node:node package*.json ./
-
-# Switch to unprivileged user
-USER node
+COPY package*.json ./
 
 # Install production dependencies cleanly and deterministically
 RUN npm ci --omit=dev
 
 # Copy application source code
-COPY --chown=node:node . .
+COPY . .
+
+# Stage 2: Minimal Hardened Production Runtime Stage
+FROM node:20-alpine AS runtime
+
+WORKDIR /usr/src/app
+ENV NODE_ENV=production
+
+# Harden runtime: Remove npm and npx package managers to eliminate build-tool CVE surface
+RUN rm -rf /usr/local/lib/node_modules/npm \
+           /usr/local/bin/npm \
+           /usr/local/bin/npx
+
+# Copy application artifacts from builder with non-root ownership
+COPY --from=builder --chown=node:node /usr/src/app ./
+
+# Drop privileges to unprivileged user
+USER node
 
 # Expose web application port
 EXPOSE 4000
 
-# Container entrypoint
-CMD ["npm", "start"]
+# Start directly with node binary (npm is omitted from runtime)
+CMD ["node", "server.js"]
