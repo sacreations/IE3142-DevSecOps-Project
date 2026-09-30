@@ -129,7 +129,6 @@ jobs:
           format: "table"
           severity: "CRITICAL,HIGH"
           exit-code: "1"
-          trivyignores: ".trivyignore"
 
   # -------------------------------------------------------------
   # Deploy & Runtime Secret Injection Verification
