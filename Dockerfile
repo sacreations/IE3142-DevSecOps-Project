@@ -3,6 +3,9 @@ FROM node:20-alpine AS builder
 
 WORKDIR /usr/src/app
 
+# Upgrade Alpine OS packages to apply latest security patches
+RUN apk update && apk upgrade --no-cache
+
 # Copy dependency manifests
 COPY package*.json ./
 
@@ -18,8 +21,9 @@ FROM node:20-alpine AS runtime
 WORKDIR /usr/src/app
 ENV NODE_ENV=production
 
-# Harden runtime: Remove npm and npx package managers to eliminate build-tool CVE surface
-RUN rm -rf /usr/local/lib/node_modules/npm \
+# Upgrade Alpine OS packages and remove build tools from runtime
+RUN apk update && apk upgrade --no-cache && \
+    rm -rf /usr/local/lib/node_modules/npm \
            /usr/local/bin/npm \
            /usr/local/bin/npx
 
