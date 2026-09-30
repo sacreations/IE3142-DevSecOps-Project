@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+{% block title %}Contributions - NodeGoat{% endblock %}
+{% block content %}
+<h1>Contributions</h1>
+{% if updateError %}<p role="alert">{{ updateError }}</p>{% endif %}
+{% if updateSuccess %}<p role="status">Contributions updated.</p>{% endif %}
+<form method="post" action="/contributions">
+  <label>Pre-tax percentage <input name="preTax" value="{{ contribution.preTax }}" inputmode="decimal" required></label>
+  <label>After-tax percentage <input name="afterTax" value="{{ contribution.afterTax }}" inputmode="decimal" required></label>
+  <button type="submit">Save contributions</button>
+</form>
+<p>Total: {{ contribution.total }}</p>
+{% endblock %}

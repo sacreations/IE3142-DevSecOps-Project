@@ -1,0 +1,12 @@
+{% extends "layout.html" %}
+{% block title %}Profile - NodeGoat{% endblock %}
+{% block content %}
+<h1>Profile</h1>
+<form method="post" action="/profile">
+  <label>First name <input name="firstName" value="{{ user.firstName }}" maxlength="50"></label>
+  <label>Last name <input name="lastName" value="{{ user.lastName }}" maxlength="50"></label>
+  <label>Bank account <input name="bankAcc" value="{{ user.bankAcc }}" maxlength="30"></label>
+  <label>Routing number <input name="routingNo" value="{{ user.routingNo }}" maxlength="30"></label>
+  <button type="submit">Save profile</button>
+</form>
+{% endblock %}
