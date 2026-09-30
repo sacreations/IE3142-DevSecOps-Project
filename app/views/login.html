@@ -1,0 +1,11 @@
+{% extends "layout.html" %}
+{% block title %}Login - NodeGoat{% endblock %}
+{% block content %}
+<h1>NodeGoat Login</h1>
+{% if loginError %}<p role="alert">{{ loginError }}</p>{% endif %}
+<form method="post" action="/login">
+  <label>Username <input name="userName" value="{{ userName }}" required></label>
+  <label>Password <input type="password" name="password" required></label>
+  <button type="submit">Log in</button>
+</form>
+{% endblock %}

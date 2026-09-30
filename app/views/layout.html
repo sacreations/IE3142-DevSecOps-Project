@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}NodeGoat{% endblock %}</title>
+</head>
+<body>
+  <nav>
+    <a href="/dashboard">Dashboard</a> |
+    <a href="/profile">Profile</a> |
+    <a href="/contributions">Contributions</a> |
+    <a href="/logout">Log out</a>
+  </nav>
+  {% block content %}{% endblock %}
+</body>
+</html>
