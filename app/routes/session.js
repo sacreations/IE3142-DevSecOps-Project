@@ -19,17 +19,16 @@ SessionHandler.prototype.displayLoginPage = function(req, res) {
 };
 
 SessionHandler.prototype.handleLoginRequest = function(req, res, next) {
-    // Guard: coerce body values to string before forwarding to DAO.
-    // Extended body-parser can produce objects when Content-Type is JSON;
-    // toString() on an object yields "[object Object]" which will never
-    // match a stored plaintext/hashed entry.
-    const userName = typeof req.body.userName === "string"
-        ? req.body.userName
-        : String(req.body.userName || "");
+    if (typeof req.body.userName !== "string" || typeof req.body.password !== "string") {
+        return res.render("login", {
+            userName: "",
+            password: "",
+            loginError: "Invalid credentials."
+        });
+    }
 
-    const password = typeof req.body.password === "string"
-        ? req.body.password
-        : String(req.body.password || "");
+    const userName = req.body.userName;
+    const password = req.body.password;
 
     // Additional length guards prevent excessive DB load from huge payloads
     if (userName.length > 200 || password.length > 200) {
