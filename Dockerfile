@@ -4,8 +4,8 @@ FROM node:20-alpine
 WORKDIR /usr/src/app
 RUN chown -R node:node /usr/src/app
 
-# Update npm globally to patch bundled tool dependencies (sigstore/node-tar CVE-2026-73566)
-RUN npm install --global npm@latest && npm cache clean --force
+# Update npm globally to patch bundled tool dependencies (compatible with Node.js 20)
+RUN npm install --global npm@11.6.2 && npm cache clean --force
 
 # Copy dependency manifests
 COPY --chown=node:node package*.json ./
