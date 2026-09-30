@@ -60,7 +60,7 @@ flowchart TD
 | Gate # | Category | Tool | Scope & Rulesets | Enforcement Policy & Blocking Criteria | Artifact / Output |
 | :---: | :--- | :--- | :--- | :--- | :--- |
 | **Gate 1** | **SAST** (Static Application Security Testing) | **Semgrep** | Rulesets: `p/javascript`, `p/owasp-top-ten`<br>Target: `app/` | `exit-code: 1` (`--error`) on findings returned by the configured rulesets. | `semgrep-results.sarif` (Uploaded to GitHub Security tab) |
-| **Gate 2** | **SCA** (Software Composition Analysis) | **npm audit** | Scans `package.json` and lockfiles for third-party CVEs. | Fails when `npm audit --audit-level=high` reports High/Critical vulnerabilities. | `npm-audit-report.json` |
+| **Gate 2** | **SCA** (Software Composition Analysis) | **npm audit** | Scans `package.json` and lockfiles for third-party CVEs. | Fails on unaccepted High/Critical advisories; documented unfixable Swig advisories are narrowly allowlisted. | `npm-audit-report.json` |
 | **Gate 3** | **Secrets Detection** | **Gitleaks** | Full git commit history (`fetch-depth: 0`) for API tokens, keys, passwords. | Immediate build termination upon detecting any unencrypted secret signature. | Gitleaks Action Summary / Log |
 | **Gate 4** | **Container Security** | **Aquasec Trivy** | Scans the built Docker image (`nodegoat-web:${{ github.sha }}`) for OS and library CVEs. | `exit-code: "1"` strictly fails the pipeline on `CRITICAL,HIGH` vulnerabilities. | `trivy-results.sarif` + console table |
 

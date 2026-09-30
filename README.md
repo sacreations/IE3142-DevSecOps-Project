@@ -81,7 +81,7 @@ The GitHub Actions workflow at [.github/workflows/devsecops.yml](.github/workflo
 [ Push / PR to main ]
           │
           ├──► Gate 1: SAST (Semgrep p/javascript & p/owasp-top-ten) ────► Blocks on findings
-          ├──► Gate 2: SCA (npm audit --audit-level=high) ───────────────► Blocks on High/Critical
+          ├──► Gate 2: SCA (npm audit --audit-level=high) ───────────────► Blocks unaccepted High/Critical findings
           ├──► Gate 3: Secrets (Gitleaks) ───────────────────────────────► Scans Git History
           │
           ▼
@@ -93,7 +93,7 @@ The GitHub Actions workflow at [.github/workflows/devsecops.yml](.github/workflo
    [ Deploy & Runtime Secret Injection (SESSION_SECRET, MONGODB_URI) ]
 ```
 
-*For complete gate policies, SARIF reporting, and instructions on testing passing vs. blocked pipeline builds, refer to [docs/cicd-pipeline.md](docs/cicd-pipeline.md).*
+Gate 2 keeps the full audit artifact and narrowly accepts only the documented Swig/`uglify-js` advisories with no upstream fix; all other High/Critical findings block the pipeline. For complete gate policies and evidence instructions, refer to [docs/cicd-pipeline.md](docs/cicd-pipeline.md).*
 
 ---
 

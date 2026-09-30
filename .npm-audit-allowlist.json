@@ -1,0 +1,14 @@
+{
+  "1091414": {
+    "package": "swig",
+    "severity": "high",
+    "fixAvailable": false,
+    "reason": "Swig is required by the legacy NodeGoat template stack; upstream has no fix."
+  },
+  "1091686": {
+    "package": "uglify-js",
+    "severity": "high",
+    "fixAvailable": false,
+    "reason": "uglify-js is a transitive Swig dependency; upstream has no fix."
+  }
+}

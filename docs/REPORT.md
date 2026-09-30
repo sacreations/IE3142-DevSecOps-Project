@@ -150,7 +150,7 @@ The GitHub Actions workflow ([.github/workflows/devsecops.yml](.github/workflows
 [ Git Push / PR Event ]
           │
           ├──► Gate 1: SAST (Semgrep p/javascript & p/owasp-top-ten) ────► Blocks on findings
-          ├──► Gate 2: SCA (npm audit --audit-level=high) ───────────────► Blocks on High/Critical
+          ├──► Gate 2: SCA (npm audit --audit-level=high) ───────────────► Blocks unaccepted High/Critical findings
           ├──► Gate 3: Secrets (Gitleaks) ───────────────────────────────► Scans History & Tokens
           │
           ▼
@@ -164,7 +164,7 @@ The GitHub Actions workflow ([.github/workflows/devsecops.yml](.github/workflows
 
 ### 4.1 Gate Enforcement & Blocking Policies
 1. **Gate 1 (SAST - Semgrep):** Scans the `app/` codebase against OWASP Top 10 rule packs with `--error` flag. Any finding returned by the configured rules terminates the workflow with exit code 1.
-2. **Gate 2 (SCA - npm audit):** Inspects the package manifest and transitive dependency tree for known CVEs at `--audit-level=high`.
+2. **Gate 2 (SCA - npm audit):** Inspects the package manifest and transitive dependency tree for known CVEs at `--audit-level=high`, blocking every unaccepted High/Critical advisory. The documented Swig and `uglify-js` advisories remain narrowly accepted because upstream provides no fix and compensating controls are applied.
 3. **Gate 3 (Secret Detection - Gitleaks):** Scans full repository commit history (`fetch-depth: 0`) to detect committed secrets, tokens, or private keys.
 4. **Gate 4 (Container Security - Aquasec Trivy):** Builds the hardened image `nodegoat-web:${{ github.sha }}` and scans for OS and package CVEs. Configured with `exit-code: "1"` on `severity: "CRITICAL,HIGH"`, guaranteeing that vulnerable base images cannot be deployed.
 

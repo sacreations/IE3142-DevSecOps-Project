@@ -78,10 +78,32 @@ jobs:
       - name: Generate npm audit report
         run: npm audit --json > npm-audit-report.json 2>&1 || true
 
-      - name: Enforce npm audit threshold
+      - name: Enforce npm audit policy
         run: |
-          npm audit --audit-level=high
-          echo "Gate 2 PASSED: No High/Critical dependency vulnerabilities."
+          node - <<'NODE'
+          const fs = require('fs');
+          const audit = JSON.parse(fs.readFileSync('npm-audit-report.json', 'utf8'));
+          const allowlist = JSON.parse(fs.readFileSync('.npm-audit-allowlist.json', 'utf8'));
+          const accepted = new Set(Object.keys(allowlist));
+          const findings = [];
+          for (const [packageName, vulnerability] of Object.entries(audit.vulnerabilities || {})) {
+            if (!['high', 'critical'].includes(vulnerability.severity)) continue;
+            for (const advisory of vulnerability.via || []) {
+              if (typeof advisory !== 'object' || !['high', 'critical'].includes(advisory.severity)) continue;
+              const id = String(advisory.source);
+              const policy = allowlist[id];
+              const valid = policy && policy.package === packageName &&
+                policy.severity === advisory.severity &&
+                vulnerability.fixAvailable === false;
+              if (!valid || !accepted.has(id)) findings.push(`${packageName} advisory ${id}`);
+            }
+          }
+          if (findings.length) {
+            console.error(`Gate 2 FAILED: unaccepted High/Critical advisories: ${findings.join(', ')}`);
+            process.exit(1);
+          }
+          console.log(`Gate 2 PASSED: accepted ${accepted.size} documented unfixable advisory(ies); no other High/Critical findings.`);
+          NODE
 
       - name: Upload npm audit Report
         uses: actions/upload-artifact@v4
