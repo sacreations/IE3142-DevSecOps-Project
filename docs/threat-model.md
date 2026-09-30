@@ -216,4 +216,4 @@ Risk Score = Likelihood x Impact
 | **Gate 1: SAST** | Semgrep (`p/javascript`, `p/owasp-top-ten`) | T-01 (NoSQLi), T-02 (eval SSJS), T-03 (XSS), T-04 (node-serialize) | Fails build if High/Critical findings are detected in changed code. |
 | **Gate 2: SCA** | `npm audit` / `audit-ci` | T-04 (Vulnerable third-party libraries such as `node-serialize`) | Fails build on any High or Critical CVE advisory. |
 | **Gate 3: Secrets** | Gitleaks | Hardcoded API keys, JWT secrets, database connection credentials | Fails build if any unmasked secret is detected in git history. |
-| **Gate 4: Container** | Trivy | Base OS image vulnerabilities, vulnerable system packages in `node:14-alpine` | Fails build on High/Critical vulnerabilities with available fixes. |
+| **Gate 4: Container** | Trivy | Base OS image vulnerabilities, vulnerable system packages in `node:20-alpine` | Fails build on High/Critical vulnerabilities with available fixes. |
