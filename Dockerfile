@@ -4,14 +4,17 @@ FROM node:20-alpine
 WORKDIR /usr/src/app
 RUN chown -R node:node /usr/src/app
 
+# Update npm globally to patch bundled tool dependencies (sigstore/node-tar CVE-2026-73566)
+RUN npm install --global npm@latest && npm cache clean --force
+
 # Copy dependency manifests
 COPY --chown=node:node package*.json ./
 
 # Switch to unprivileged user
 USER node
 
-# Install production dependencies
-RUN npm install --only=production 2>/dev/null || npm install 2>/dev/null || true
+# Install production dependencies cleanly and deterministically
+RUN npm ci --omit=dev
 
 # Copy application source code
 COPY --chown=node:node . .
