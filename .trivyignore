@@ -1,0 +1,12 @@
+# =============================================================================
+# IE3142 DevSecOps Risk Acceptance Policy (.trivyignore)
+# =============================================================================
+
+# CVE-2023-25345: swig template engine - arbitrary local file read
+# Severity: HIGH | Upstream Status: No fix available (abandoned upstream package)
+# Threat Assessment: Swig allows arbitrary file reads if untrusted template paths are evaluated.
+# Compensating Controls:
+# 1. Template names and render paths are hardcoded server-side (no dynamic template paths).
+# 2. All user profile and session inputs are sanitized via validator.escape().
+# 3. Web container runs as non-root user 'node' (UID 1000) with read-only application code.
+CVE-2023-25345
