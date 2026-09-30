@@ -1,7 +1,7 @@
 # Defensive Security Remediation & SAST Audit Report (LO2)
 
 **Project:** SLIIT IE3142 DevSecOps Assessment  
-**Author / Responsible Engineer:** Malith Fernando (`member3@example.com`)  
+**Author / Responsible Engineer:** Malith Fernando (`Malithferdi22556@gmail.com`)
 **Target Codebase:** OWASP NodeGoat  
 **Date:** 2026-09-29  
 **Status:** Remediated & Validated (4/4 Flaws Resolved)  
@@ -84,7 +84,12 @@ eval("total = " + preTax + " + " + afterTax);
 
 #### After (Remediated):
 ```javascript
-// SECURE: Strict numeric parsing and safe mathematical operations
+// SECURE: Validate complete numeric strings before safe mathematical operations
+const numericPattern = /^-?\d+(\.\d+)?$/;
+if (typeof rawPreTax !== "string" || typeof rawAfterTax !== "string" ||
+    !numericPattern.test(rawPreTax.trim()) || !numericPattern.test(rawAfterTax.trim())) {
+    return res.render("contributions", { updateError: "Inputs must be valid decimal numbers." });
+}
 const preTax = parseFloat(rawPreTax);
 const afterTax = parseFloat(rawAfterTax);
 

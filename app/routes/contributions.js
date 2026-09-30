@@ -27,8 +27,16 @@ ContributionsHandler.prototype.handleContributionsUpdate = function(req, res, ne
     const rawPreTax = req.body.preTax;
     const rawAfterTax = req.body.afterTax;
 
-    // SECURE: Parse inputs as strict floating-point numbers.
-    // Replace dangerous eval() with native math arithmetic.
+    // SECURE: Validate the complete input before native math arithmetic.
+    const numericPattern = /^-?\d+(\.\d+)?$/;
+    if (typeof rawPreTax !== "string" || typeof rawAfterTax !== "string" ||
+        !numericPattern.test(rawPreTax.trim()) || !numericPattern.test(rawAfterTax.trim())) {
+        return res.render("contributions", {
+            updateError: "Invalid contribution values: inputs must be valid decimal numbers.",
+            contribution: { preTax: 0, afterTax: 0, total: 0 }
+        });
+    }
+
     const preTax = parseFloat(rawPreTax);
     const afterTax = parseFloat(rawAfterTax);
 
