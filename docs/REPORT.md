@@ -25,7 +25,7 @@ Modern web applications deployed in continuous delivery environments face an exp
 ### 1.1 Architectural Segmentation & Container Isolation
 In the default distribution of NodeGoat, both application logic and database services operate with elevated host privileges, and the database network interface (`27017`) is exposed directly to the host machine. To establish defense-in-depth, the architecture was refactored into a segregated two-tier container topology managed by Docker Compose:
 
-1. **Web Tier (`nodegoat-web`):** Built upon a minimal `node:14-alpine` base image. The container strictly drops root privileges, executing application processes under the unprivileged `node` user (UID 1000). The service exposes only ingress HTTP port 4000 to the host network interface.
+1. **Web Tier (`nodegoat-web`):** Built upon a minimal `node:20-alpine` base image. The container strictly drops root privileges, executing application processes under the unprivileged `node` user (UID 1000). The service exposes only ingress HTTP port 4000 to the host network interface.
 2. **Database Tier (`nodegoat-db`):** Deploys MongoDB 4.4 attached to a dedicated persistent volume (`mongodb_data`). Port `27017` is bound exclusively to an internal custom Docker bridge network (`backend-net`) with zero host port exposure. This ensures database queries originate solely from authenticated internal container IP addresses.
 
 ```
@@ -41,7 +41,7 @@ In the default distribution of NodeGoat, both application logic and database ser
 |                                                                             |
 |  +-----------------------------------------------------------------------+  |
 |  | Web Container (`web`) - Execution Context: USER node (UID 1000)        |  |
-|  | - Node.js 14 Alpine, Express.js Runtime                               |  |
+|  | - Node.js 20 Alpine, Express.js Runtime                               |  |
 |  | - Ingress Port: 4000 (Forwarded from Host)                             |  |
 |  +-----------------------------------------------------------------------+  |
 |                                     |                                       |
@@ -149,8 +149,8 @@ The GitHub Actions workflow ([.github/workflows/devsecops.yml](.github/workflows
 ```
 [ Git Push / PR Event ]
           │
-          ├──► Gate 1: SAST (Semgrep p/javascript & p/owasp-top-ten) ────► Blocks on High/Critical
-          ├──► Gate 2: SCA (npm audit --audit-level=high) ───────────────► Scans Dependencies
+          ├──► Gate 1: SAST (Semgrep p/javascript & p/owasp-top-ten) ────► Blocks on findings
+          ├──► Gate 2: SCA (npm audit --audit-level=high) ───────────────► Blocks on High/Critical
           ├──► Gate 3: Secrets (Gitleaks) ───────────────────────────────► Scans History & Tokens
           │
           ▼
@@ -163,7 +163,7 @@ The GitHub Actions workflow ([.github/workflows/devsecops.yml](.github/workflows
 ```
 
 ### 4.1 Gate Enforcement & Blocking Policies
-1. **Gate 1 (SAST - Semgrep):** Scans the `app/` codebase against OWASP Top 10 rule packs with `--error` flag. Any high/critical finding terminates the workflow with exit code 1.
+1. **Gate 1 (SAST - Semgrep):** Scans the `app/` codebase against OWASP Top 10 rule packs with `--error` flag. Any finding returned by the configured rules terminates the workflow with exit code 1.
 2. **Gate 2 (SCA - npm audit):** Inspects the package manifest and transitive dependency tree for known CVEs at `--audit-level=high`.
 3. **Gate 3 (Secret Detection - Gitleaks):** Scans full repository commit history (`fetch-depth: 0`) to detect committed secrets, tokens, or private keys.
 4. **Gate 4 (Container Security - Aquasec Trivy):** Builds the hardened image `nodegoat-web:${{ github.sha }}` and scans for OS and package CVEs. Configured with `exit-code: "1"` on `severity: "CRITICAL,HIGH"`, guaranteeing that vulnerable base images cannot be deployed.
