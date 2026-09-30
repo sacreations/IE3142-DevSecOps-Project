@@ -28,7 +28,7 @@ flowchart TD
     end
 
     subgraph Container_Gate [Container & Artifact Security]
-        Build["Docker Build\n(node:14-alpine, USER node)"]
+        Build["Docker Build\n(node:20-alpine, USER node)"]
         Gate4["Gate 4: Aquasec Trivy\nImage Vulnerability Scanner\nExit Code 1 on High / Critical"]
     end
 
@@ -59,8 +59,8 @@ flowchart TD
 
 | Gate # | Category | Tool | Scope & Rulesets | Enforcement Policy & Blocking Criteria | Artifact / Output |
 | :---: | :--- | :--- | :--- | :--- | :--- |
-| **Gate 1** | **SAST** (Static Application Security Testing) | **Semgrep** | Rulesets: `p/javascript`, `p/owasp-top-ten`<br>Target: `app/` | `exit-code: 1` (`--error`) on High or Critical code vulnerabilities. | `semgrep-results.sarif` (Uploaded to GitHub Security tab) |
-| **Gate 2** | **SCA** (Software Composition Analysis) | **npm audit** | Scans `package.json` and lockfiles for third-party CVEs. | Fails on dependencies with CVSS &ge; 7.0 (High / Critical). | `npm-audit-report.json` |
+| **Gate 1** | **SAST** (Static Application Security Testing) | **Semgrep** | Rulesets: `p/javascript`, `p/owasp-top-ten`<br>Target: `app/` | `exit-code: 1` (`--error`) on findings returned by the configured rulesets. | `semgrep-results.sarif` (Uploaded to GitHub Security tab) |
+| **Gate 2** | **SCA** (Software Composition Analysis) | **npm audit** | Scans `package.json` and lockfiles for third-party CVEs. | Fails when `npm audit --audit-level=high` reports High/Critical vulnerabilities. | `npm-audit-report.json` |
 | **Gate 3** | **Secrets Detection** | **Gitleaks** | Full git commit history (`fetch-depth: 0`) for API tokens, keys, passwords. | Immediate build termination upon detecting any unencrypted secret signature. | Gitleaks Action Summary / Log |
 | **Gate 4** | **Container Security** | **Aquasec Trivy** | Scans the built Docker image (`nodegoat-web:${{ github.sha }}`) for OS and library CVEs. | `exit-code: "1"` strictly fails the pipeline on `CRITICAL,HIGH` vulnerabilities. | `trivy-results.sarif` + console table |
 
@@ -92,5 +92,5 @@ To satisfy assessment criteria for demonstrable security enforcement:
    - Gate 1 (Semgrep): **0 findings** &rarr; PASS
    - Gate 2 (SCA): Dependencies evaluated &rarr; PASS
    - Gate 3 (Gitleaks): Zero leaked secrets in history &rarr; PASS
-   - Gate 4 (Trivy): Hardened non-root `node:14-alpine` image passes &rarr; PASS
+   - Gate 4 (Trivy): Hardened non-root `node:20-alpine` image passes &rarr; PASS
    - Deployment stage executes with dynamic secret injection &rarr; **SUCCESS**

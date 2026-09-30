@@ -44,10 +44,10 @@ jobs:
           EXIT_CODE=$?
           set -e
           if [ "${{ github.event.inputs.fail_on_findings }}" != "false" ] && [ "${EXIT_CODE:-0}" -ne 0 ]; then
-            echo "::error::Gate 1 FAILED: Semgrep detected High/Critical security violations."
+            echo "::error::Gate 1 FAILED: Semgrep detected security violations."
             exit 1
           fi
-          echo "Gate 1 PASSED: No High/Critical SAST findings detected."
+          echo "Gate 1 PASSED: No SAST findings detected."
 
       - name: Upload Semgrep SARIF Results
         uses: github/codeql-action/upload-sarif@v4
@@ -70,16 +70,18 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "20"
 
       - name: Install Dependencies
         run: npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts
 
-      - name: Run npm audit
+      - name: Generate npm audit report
+        run: npm audit --json > npm-audit-report.json 2>&1 || true
+
+      - name: Enforce npm audit threshold
         run: |
-          npm audit --json > npm-audit-report.json 2>&1 || true
-          npm audit --audit-level=high 2>&1 || true
-          echo "Gate 2: SCA analysis complete. Review npm-audit-report.json artifact for full findings."
+          npm audit --audit-level=high
+          echo "Gate 2 PASSED: No High/Critical dependency vulnerabilities."
 
       - name: Upload npm audit Report
         uses: actions/upload-artifact@v4
@@ -151,8 +153,12 @@ jobs:
         run: |
           echo "Verifying runtime secret injection into deployment environment..."
           if [ -z "$SESSION_SECRET" ]; then
-            echo "::warning::SESSION_SECRET secret not set in GitHub repository secrets. Using runner default."
-          else
-            echo "SESSION_SECRET successfully supplied via GitHub Encrypted Secrets (masked: ***)."
+            echo "::error::SESSION_SECRET secret is not set in GitHub repository secrets."
+            exit 1
           fi
+          if [ -z "$MONGODB_URI" ]; then
+            echo "::error::MONGODB_URI secret is not set in GitHub repository secrets."
+            exit 1
+          fi
+          echo "Runtime secrets successfully supplied via GitHub Encrypted Secrets (masked: ***)."
           echo "Target deployment environment configured successfully."

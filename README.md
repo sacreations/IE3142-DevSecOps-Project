@@ -15,7 +15,7 @@ Academic DevSecOps implementation and security assessment for the **SLIIT IE3142
 | :--- | :--- | :--- | :--- |
 | **Nethika Fernando** | `nethikafernando887@gmail.com` | Infrastructure & Docker | [Dockerfile](Dockerfile), [docker-compose.yml](docker-compose.yml), non-root execution, `backend-net` isolation. |
 | **Chanidu Deshan** | `deshanchanidu@gmail.com` | Threat Modeling | [docs/threat-model.md](docs/threat-model.md), STRIDE analysis, 5x5 risk matrix, threat-to-control mapping. |
-| **Malith Fernando** | `member3@example.com` | Secure Coding & SAST | [app/](app/), [tests/security-regression.test.js](tests/security-regression.test.js), Semgrep diffs, [evidence/](evidence/). |
+| **Malith Fernando** | `Malithferdi22556@gmail.com` | Secure Coding & SAST | [app/](app/), [tests/security-regression.test.js](tests/security-regression.test.js), Semgrep diffs, [evidence/](evidence/). |
 | **Supun Adithya** | `hi@supunadithya.com` | DevOps & Security CI/CD | [.github/workflows/devsecops.yml](.github/workflows/devsecops.yml), [docs/cicd-pipeline.md](docs/cicd-pipeline.md), [docs/secrets-management.md](docs/secrets-management.md). |
 
 ---
@@ -37,7 +37,7 @@ The deployment architecture is partitioned into a two-tier container environment
 |                                                                             |
 |  +-----------------------------------------------------------------------+  |
 |  | Web Container (`web`) - Execution Context: USER node (UID 1000)        |  |
-|  | - Node.js 14 Alpine Base Image                                        |  |
+|  | - Node.js 20 Alpine Base Image                                        |  |
 |  | - Port 4000 Ingress                                                   |  |
 |  +-----------------------------------------------------------------------+  |
 |                                     |                                       |
@@ -65,7 +65,7 @@ Four core vulnerabilities in OWASP NodeGoat were identified, remediated, regress
 | # | Vulnerability Class | CWE | Location | Remediation Mechanism | Semgrep Before | Semgrep After |
 | :-: | :--- | :-: | :--- | :--- | :-: | :-: |
 | **1** | **NoSQL Injection** | CWE-943 | [app/data/user-dao.js](app/data/user-dao.js)<br>[app/routes/session.js](app/routes/session.js) | Enforced strict `typeof === 'string'` guards on all query arguments. | 1 HIGH | **0 (Clean)** |
-| **2** | **SSJS / `eval()` RCE** | CWE-95 | [app/routes/contributions.js](app/routes/contributions.js) | Removed `eval()`; implemented strict regex validation & safe `Number()` math. | 1 CRITICAL | **0 (Clean)** |
+| **2** | **SSJS / `eval()` RCE** | CWE-95 | [app/routes/contributions.js](app/routes/contributions.js) | Removed `eval()`; implemented strict regex validation & safe numeric math. | 1 CRITICAL | **0 (Clean)** |
 | **3** | **Stored XSS** | CWE-79 | [app/routes/profile.js](app/routes/profile.js) | Applied `validator.escape()` on all profile inputs before persistence. | 1 MEDIUM | **0 (Clean)** |
 | **4** | **Insecure Deserialization** | CWE-502 | [app/routes/profile.js](app/routes/profile.js) | Removed `node-serialize`; replaced with `JSON.parse()` & schema whitelisting. | 1 CRITICAL | **0 (Clean)** |
 
@@ -80,8 +80,8 @@ The GitHub Actions workflow at [.github/workflows/devsecops.yml](.github/workflo
 ```
 [ Push / PR to main ]
           │
-          ├──► Gate 1: SAST (Semgrep p/javascript & p/owasp-top-ten) ────► Blocks on High/Critical
-          ├──► Gate 2: SCA (npm audit --audit-level=high) ───────────────► Scans Dependencies
+          ├──► Gate 1: SAST (Semgrep p/javascript & p/owasp-top-ten) ────► Blocks on findings
+          ├──► Gate 2: SCA (npm audit --audit-level=high) ───────────────► Blocks on High/Critical
           ├──► Gate 3: Secrets (Gitleaks) ───────────────────────────────► Scans Git History
           │
           ▼
